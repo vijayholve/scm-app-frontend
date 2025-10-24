@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import { storage } from '../utils/storage';
 import {
   MOCK_USERS,
   MOCK_STUDENTS,
@@ -38,7 +38,7 @@ class ApiService {
   private setupInterceptors() {
     this.api.interceptors.request.use(
       async (config) => {
-        const token = await SecureStore.getItemAsync(TOKEN_KEY);
+        const token = await storage.getItem(TOKEN_KEY);
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -51,7 +51,7 @@ class ApiService {
       (response) => response,
       async (error) => {
         if (error.response?.status === 401) {
-          await SecureStore.deleteItemAsync(TOKEN_KEY);
+          await storage.removeItem(TOKEN_KEY);
         }
         return Promise.reject(error);
       }
@@ -67,17 +67,17 @@ class ApiService {
     }
 
     const token = `mock_jwt_token_${user.id}_${Date.now()}`;
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await storage.setItem(TOKEN_KEY, token);
 
     return { token, user };
   }
 
   async logout(): Promise<void> {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await storage.removeItem(TOKEN_KEY);
   }
 
   async getCurrentUser(): Promise<User | null> {
-    const token = await SecureStore.getItemAsync(TOKEN_KEY);
+    const token = await storage.getItem(TOKEN_KEY);
     if (!token) return null;
 
     const userId = token.split('_')[3];

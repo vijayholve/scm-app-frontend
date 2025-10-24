@@ -2,6 +2,9 @@ import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { StudentsScreen } from '../screens/admin/StudentsScreen';
+import { TeachersScreen } from '../screens/admin/TeachersScreen';
+import { ClassesScreen } from '../screens/admin/ClassesScreen';
+import { FeesScreen } from '../screens/admin/FeesScreen';
 import { AssignmentsScreen } from '../screens/common/AssignmentsScreen';
 import { AttendanceScreen } from '../screens/common/AttendanceScreen';
 import { AnnouncementsScreen } from '../screens/common/AnnouncementsScreen';
@@ -35,6 +38,20 @@ export const AdminNavigation: React.FC = () => {
         }}
       />
       <Drawer.Screen
+        name="Teachers"
+        component={TeachersScreen}
+        options={{
+          drawerIcon: ({ color }) => '👨‍🏫',
+        }}
+      />
+      <Drawer.Screen
+        name="Classes"
+        component={ClassesScreen}
+        options={{
+          drawerIcon: ({ color }) => '🏫',
+        }}
+      />
+      <Drawer.Screen
         name="Assignments"
         component={AssignmentsScreen}
         options={{
@@ -46,6 +63,13 @@ export const AdminNavigation: React.FC = () => {
         component={AttendanceScreen}
         options={{
           drawerIcon: ({ color }) => '📅',
+        }}
+      />
+      <Drawer.Screen
+        name="Fees"
+        component={FeesScreen}
+        options={{
+          drawerIcon: ({ color }) => '💰',
         }}
       />
       <Drawer.Screen
