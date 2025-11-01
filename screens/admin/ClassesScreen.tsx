@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Card, Text, Button, FAB, Chip, List } from 'react-native-paper';
-import { apiService } from '../../api/apiService';
-import { Class } from '../../types';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { Card, Text, Button, FAB, Chip, List } from "react-native-paper";
+import { apiService } from "../../api/apiService";
+import { Class } from "../../types";
+import { LoadingSpinner } from "../../components/common/LoadingSpinner";
+import { storage } from "../../utils/storage";
 
 export const ClassesScreen: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -16,10 +17,14 @@ export const ClassesScreen: React.FC = () => {
 
   const loadClasses = async () => {
     try {
-      const data = await apiService.getClasses();
+      const raw = await storage.getItem("SCM-AUTH");
+      const accountId = raw
+        ? JSON.parse(raw)?.data?.accountId ?? undefined
+        : undefined;
+      const data = await apiService.getClasses(accountId);
       setClasses(data);
     } catch (error) {
-      console.error('Failed to load classes:', error);
+      console.error("Failed to load classes:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -36,7 +41,7 @@ export const ClassesScreen: React.FC = () => {
       await apiService.deleteClass(id);
       loadClasses();
     } catch (error) {
-      console.error('Failed to delete class:', error);
+      console.error("Failed to delete class:", error);
     }
   };
 
@@ -45,7 +50,9 @@ export const ClassesScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         {classes.map((classItem) => (
           <Card key={classItem.id} style={styles.card}>
@@ -74,7 +81,10 @@ export const ClassesScreen: React.FC = () => {
               </View>
 
               <View style={styles.actions}>
-                <Button mode="outlined" onPress={() => console.log('Edit', classItem.id)}>
+                <Button
+                  mode="outlined"
+                  onPress={() => console.log("Edit", classItem.id)}
+                >
                   Edit
                 </Button>
                 <Button
@@ -99,7 +109,7 @@ export const ClassesScreen: React.FC = () => {
       <FAB
         icon="plus"
         style={styles.fab}
-        onPress={() => console.log('Add class')}
+        onPress={() => console.log("Add class")}
       />
     </View>
   );
@@ -108,7 +118,7 @@ export const ClassesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     padding: 16,
   },
   card: {
@@ -122,12 +132,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 12,
   },
@@ -135,22 +145,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   scheduleLabel: {
-    color: '#666',
+    color: "#666",
   },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     gap: 8,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#6200ee',
+    backgroundColor: "#6200ee",
   },
   emptyContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 40,
   },
 });

@@ -27,7 +27,9 @@ export const RootNavigation: React.FC = () => {
   const userType =
     (user as any).type || (user as any).roleName || (user as any).role;
   const normalized = String(userType).toUpperCase();
-
+  console.log("User type for navigation:", normalized);
+  console.log("Full user object:", user);
+  // console.log("user type ")
   return (
     <NavigationContainer>
       {normalized === "ADMIN" && <AdminNavigation />}

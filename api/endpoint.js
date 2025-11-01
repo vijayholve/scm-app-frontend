@@ -1,5 +1,4 @@
-// Centralized API endpoints registry
-// Group by domain for discoverability. Keep paths relative to baseURL.
+
 
 const endpoints = {
   auth: {

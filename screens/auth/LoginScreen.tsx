@@ -1,41 +1,15 @@
-import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from "react-native";
-import { TextInput, Button, Text, Card, Snackbar } from "react-native-paper";
-import { Formik } from "formik";
-import * as Yup from "yup";
-import { apiService } from "../../api/apiService";
-
-// NOTE: Assuming '../../context/AuthContext' contains the necessary login logic
-// which will handle storing the returned user details (like token/user object)
-// using AsyncStorage (the standard persistence method in React Native).
-import { useAuth } from "../../context/AuthContext";
-
-// --- API Configuration ---
-const LOGIN_API_URL =
-  "https://scm-production-8ceb.up.railway.app/api/users/login";
+import React, { useState } from 'react';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { TextInput, Button, Text, Card, Snackbar, RadioButton } from 'react-native-paper';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import { useAuth } from '../../context/AuthContext';
 
 const loginSchema = Yup.object().shape({
-  // CHANGED: 'email' field is now 'username'
-  username: Yup.string().required("Username is required"),
-  password: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required"),
-  // NEW FIELDS ADDED:
-  type: Yup.string()
-    .oneOf(
-      ["STUDENT", "ADMIN", "TEACHER"],
-      "Invalid user type. Must be ADMIN, TEACHER, or STUDENT."
-    )
-    .required("User type is required"),
-  accountId: Yup.string()
-    .required("Account ID is required")
-    .matches(/^[0-9]+$/, "Account ID must be a number"),
+  userName: Yup.string().required('User Name is required'),
+  password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+  accountId: Yup.string().required('Account ID is required'),
+  type: Yup.mixed<'ADMIN' | 'TEACHER' | 'STUDENT'>().oneOf(['ADMIN', 'TEACHER', 'STUDENT']).required('User Type is required'),
 });
 
 export const LoginScreen: React.FC = () => {
@@ -45,52 +19,11 @@ export const LoginScreen: React.FC = () => {
   const [error, setError] = useState("");
   const [showSnackbar, setShowSnackbar] = useState(false);
 
-  /**
-   * Handles the login process by making an API call to authenticate the user.
-   * On success, it calls the context's 'login' function to store the user details.
-   */
-  const handleLogin = async (values: {
-    username: string;
-    password: string;
-    type: string;
-    accountId: string;
-  }) => {
+  const handleLogin = async (values: { userName: string; password: string; accountId: string; type: 'ADMIN' | 'TEACHER' | 'STUDENT' }) => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(LOGIN_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // Mapped 'username' to 'userName' for the API payload
-        body: JSON.stringify({
-          userName: values.username, // API expects 'userName'
-          password: values.password,
-          type: values.type,
-          accountId: values.accountId,
-        }),
-      });
-
-      // 1. Always read the JSON body. Error details are often here, even on non-200 responses.
-      const data = await response.json();
-      console.log("Login API response data:", data);
-
-      // 2. Check for HTTP success AND API specific success status
-      // Use `response.ok` (true for 2xx) or check `response.status` —
-      // `response.statusCode` is not a property on the Fetch Response object.
-      if (response.ok && data.status === "SUCCESS") {
-        // Login Success: Pass the complete response data to the context's login function.
-        await login(data);
-      } else {
-        // 3. Handle failure: Use HTTP status or API-provided message if available.
-        const apiMessage = data?.message || data?.error;
-        const statusText = response.status ? ` (HTTP ${response.status})` : "";
-        throw new Error(
-          (apiMessage && `${apiMessage}${statusText}`) ||
-            "Login failed. Please check your credentials."
-        );
-      }
+      await login(values.userName, values.password, values.accountId, values.type);
     } catch (err) {
       // Catch network errors or the error thrown above
       const errorMessage =
@@ -119,12 +52,7 @@ export const LoginScreen: React.FC = () => {
           <Card style={styles.card}>
             <Card.Content>
               <Formik
-                initialValues={{
-                  username: "admin@school.com",
-                  password: "password123",
-                  type: "ADMIN", // Default type
-                  accountId: "1", // Default account ID
-                }}
+                initialValues={{ userName: '', password: '', accountId: '', type: 'ADMIN' as 'ADMIN' | 'TEACHER' | 'STUDENT' }}
                 validationSchema={loginSchema}
                 onSubmit={handleLogin}
               >
@@ -139,25 +67,23 @@ export const LoginScreen: React.FC = () => {
                   <View>
                     {/* CHANGED: TextInput now uses 'username' */}
                     <TextInput
-                      label="Username"
-                      value={values.username}
-                      onChangeText={handleChange("username")}
-                      onBlur={handleBlur("username")}
-                      error={touched.username && !!errors.username}
+                      label="User Name"
+                      value={values.userName}
+                      onChangeText={handleChange('userName')}
+                      onBlur={handleBlur('userName')}
                       autoCapitalize="none"
                       style={styles.input}
                       mode="outlined"
                     />
-                    {touched.username && errors.username && (
-                      <Text style={styles.errorText}>{errors.username}</Text>
+                    {touched.userName && errors.userName && (
+                      <Text style={styles.errorText}>{errors.userName}</Text>
                     )}
 
                     <TextInput
                       label="Password"
                       value={values.password}
-                      onChangeText={handleChange("password")}
-                      onBlur={handleBlur("password")}
-                      error={touched.password && !!errors.password}
+                      onChangeText={handleChange('password')}
+                      onBlur={handleBlur('password')}
                       secureTextEntry
                       style={styles.input}
                       mode="outlined"
@@ -166,14 +92,12 @@ export const LoginScreen: React.FC = () => {
                       <Text style={styles.errorText}>{errors.password}</Text>
                     )}
 
-                    {/* NEW ACCOUNT ID INPUT */}
                     <TextInput
                       label="Account ID"
                       value={values.accountId}
-                      onChangeText={handleChange("accountId")}
-                      onBlur={handleBlur("accountId")}
-                      error={touched.accountId && !!errors.accountId}
-                      keyboardType="numeric"
+                      onChangeText={handleChange('accountId')}
+                      onBlur={handleBlur('accountId')}
+                      autoCapitalize="none"
                       style={styles.input}
                       mode="outlined"
                     />
@@ -181,20 +105,31 @@ export const LoginScreen: React.FC = () => {
                       <Text style={styles.errorText}>{errors.accountId}</Text>
                     )}
 
-                    {/* NEW USER TYPE INPUT */}
-                    <TextInput
-                      label="User Type (ADMIN, TEACHER, STUDENT)"
-                      value={values.type}
-                      onChangeText={handleChange("type")}
-                      onBlur={handleBlur("type")}
-                      error={touched.type && !!errors.type}
-                      autoCapitalize="characters"
-                      style={styles.input}
-                      mode="outlined"
-                    />
-                    {touched.type && errors.type && (
-                      <Text style={styles.errorText}>{errors.type}</Text>
-                    )}
+                    <View style={{ marginTop: 8, marginBottom: 8 }}>
+                      <Text variant="bodyMedium" style={{ marginBottom: 8 }}>User Type</Text>
+                      <RadioButton.Group
+                        onValueChange={(value) => (handleChange('type')(value))}
+                        value={values.type}
+                      >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <RadioButton value="ADMIN" />
+                            <Text>Admin</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <RadioButton value="TEACHER" />
+                            <Text>Teacher</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <RadioButton value="STUDENT" />
+                            <Text>Student</Text>
+                          </View>
+                        </View>
+                      </RadioButton.Group>
+                      {touched.type && errors.type && (
+                        <Text style={styles.errorText}>{errors.type as any}</Text>
+                      )}
+                    </View>
 
                     <Button
                       mode="contained"
@@ -209,26 +144,6 @@ export const LoginScreen: React.FC = () => {
                 )}
               </Formik>
 
-              <View style={styles.demoContainer}>
-                <Text variant="titleSmall" style={styles.demoTitle}>
-                  Demo Accounts:
-                </Text>
-                {/* CHANGED: Demo text to reflect 'Username' */}
-                <Text variant="bodySmall" style={styles.demoText}>
-                  Username (Admin): admin@school.com / Type: ADMIN / ID: 1
-                </Text>
-                <Text variant="bodySmall" style={styles.demoText}>
-                  Username (Teacher): teacher@school.com / Type: TEACHER / ID:
-                  10
-                </Text>
-                <Text variant="bodySmall" style={styles.demoText}>
-                  Username (Student): student@school.com / Type: STUDENT / ID:
-                  100
-                </Text>
-                <Text variant="bodySmall" style={styles.demoText}>
-                  Password: password123
-                </Text>
-              </View>
             </Card.Content>
           </Card>
         </View>

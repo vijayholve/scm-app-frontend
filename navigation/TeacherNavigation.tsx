@@ -7,6 +7,7 @@ import { AnnouncementsScreen } from '../screens/common/AnnouncementsScreen';
 import { ProfileScreen } from '../screens/common/ProfileScreen';
 // ADDED Text IMPORT
 import { Text } from 'react-native-paper'; 
+import StudentListScreen from '../screens/common/StudentListScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -59,6 +60,14 @@ export const TeacherNavigation: React.FC = () => {
         options={{
           // REPLACED <span> WITH <Text>
           tabBarIcon: ({ color }) => <Text>👤</Text>,
+        }}
+      />
+      <Tab.Screen 
+        name="Extra"
+        component={StudentListScreen} // Placeholder component
+        options={{
+          // REPLACED <span> WITH <Text>
+          tabBarIcon: ({ color }) => <Text>⭐</Text>,
         }}
       />
     </Tab.Navigator>

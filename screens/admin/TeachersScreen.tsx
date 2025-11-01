@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Card, Text, Button, FAB, Searchbar, Chip } from 'react-native-paper';
-import { apiService } from '../../api/apiService';
-import { Teacher } from '../../types';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { Card, Text, Button, FAB, Searchbar, Chip } from "react-native-paper";
+import { apiService } from "../../api/apiService";
+import { Teacher } from "../../types";
+import { LoadingSpinner } from "../../components/common/LoadingSpinner";
+import { storage } from "../../utils/storage";
 
 export const TeachersScreen: React.FC = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadTeachers();
@@ -33,11 +34,15 @@ export const TeachersScreen: React.FC = () => {
 
   const loadTeachers = async () => {
     try {
-      const data = await apiService.getTeachers();
+      const raw = await storage.getItem("SCM-AUTH");
+      const accountId = raw
+        ? JSON.parse(raw)?.data?.accountId ?? undefined
+        : undefined;
+      const data = await apiService.getTeachers(accountId);
       setTeachers(data);
       setFilteredTeachers(data);
     } catch (error) {
-      console.error('Failed to load teachers:', error);
+      console.error("Failed to load teachers:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -54,7 +59,7 @@ export const TeachersScreen: React.FC = () => {
       await apiService.deleteTeacher(id);
       loadTeachers();
     } catch (error) {
-      console.error('Failed to delete teacher:', error);
+      console.error("Failed to delete teacher:", error);
     }
   };
 
@@ -70,7 +75,9 @@ export const TeachersScreen: React.FC = () => {
       />
 
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         {filteredTeachers.map((teacher) => (
           <Card key={teacher.id} style={styles.card}>
@@ -90,15 +97,22 @@ export const TeachersScreen: React.FC = () => {
               <View style={styles.details}>
                 <Text variant="bodySmall">Phone: {teacher.phone}</Text>
                 <Text variant="bodySmall">
-                  Classes Assigned: {teacher.classAssigned.length}
+                  Classes Assigned: {teacher?.classAssigned?.length}
                 </Text>
               </View>
 
               <View style={styles.actions}>
-                <Button mode="outlined" onPress={() => console.log('Edit', teacher.id)}>
+                <Button
+                  mode="outlined"
+                  onPress={() => console.log("Edit", teacher.id)}
+                >
                   Edit
                 </Button>
-                <Button mode="text" textColor="red" onPress={() => handleDelete(teacher.id)}>
+                <Button
+                  mode="text"
+                  textColor="red"
+                  onPress={() => handleDelete(teacher.id)}
+                >
                   Delete
                 </Button>
               </View>
@@ -116,7 +130,7 @@ export const TeachersScreen: React.FC = () => {
       <FAB
         icon="plus"
         style={styles.fab}
-        onPress={() => console.log('Add teacher')}
+        onPress={() => console.log("Add teacher")}
       />
     </View>
   );
@@ -125,7 +139,7 @@ export const TeachersScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   searchbar: {
     margin: 16,
@@ -137,31 +151,31 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   email: {
-    color: '#666',
+    color: "#666",
   },
   details: {
     marginBottom: 12,
   },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     gap: 8,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#6200ee',
+    backgroundColor: "#6200ee",
   },
   emptyContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 40,
   },
 });

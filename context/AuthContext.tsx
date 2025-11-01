@@ -1,10 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-// Note: In a real React Native environment, you would use '@react-native-async-storage/async-storage'
-// We use a conceptual import here for demonstration.
-import AsyncStorage from '@react-native-async-storage/async-storage';
-// Importing mock types/services from your existing project structure
-import { User, Permission, ActionPermissions } from '../types'; 
-import { apiService } from '../api/apiService';
+import { User, Permission } from '../types';
+import api, { endpoints } from '../api';
+import { storage } from '../utils/storage';
 
 // --- STORAGE KEYS ---
 const API_KEY_STORAGE = '@authToken';
@@ -48,8 +45,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  // CORRECTED: Login now accepts the full successful API response data
-  login: (responseData: any) => Promise<void>; 
+  login: (userName: string, password: string, accountId: string, type: 'ADMIN' | 'TEACHER' | 'STUDENT') => Promise<void>;
   logout: () => Promise<void>;
   // CORRECTED: Permission check now takes entity name and action type
   hasPermission: (entityName: string, action: keyof ActionPermissions) => boolean;
@@ -71,13 +67,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const checkAuth = async () => {
     try {
-      const storedToken = await AsyncStorage.getItem(API_KEY_STORAGE);
-      const storedUser = await AsyncStorage.getItem(USER_STORAGE);
-
-      if (storedUser && storedToken) {
-        // Rehydrate user state
-        const userObj = JSON.parse(storedUser) as User;
-        setUser({ ...userObj, accessToken: storedToken });
+      const raw = await storage.getItem('SCM-AUTH');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          const data = parsed?.data;
+          if (data) {
+            const mappedUser: User = {
+              id: data.id,
+              email: data.email || data.userName || '',
+              firstName: data.firstName || '',
+              lastName: data.lastName || '',
+              role: (data.type?.toLowerCase?.() || 'student') as any,
+              permissions: data?.role?.permissions || [],
+              profilePic: data.profilePic,
+            };
+            setUser(mappedUser);
+          } else {
+            setUser(null);
+          }
+        } catch {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -86,45 +99,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  /**
-   * Accepts the successful API response, extracts key data, stores it in AsyncStorage, and updates state.
-   * @param responseData The parsed JSON body from the successful login API call.
-   */
-  // CORRECTED: Login function now handles the received API data
-  const login = async (responseData: any) => {
+  const login = async (userName: string, password: string, accountId: string, type: 'ADMIN' | 'TEACHER' | 'STUDENT') => {
     try {
-      // **CRITICAL FIX: Explicitly check for accessToken and required data structure.**
-      if (responseData.status !== 'SUCCESS' || !responseData.accessToken || !responseData.data || !responseData.role) {
-        // This ensures if the API status is 'SUCCESS' but crucial fields are missing, it throws.
-        // However, this check should ideally be sufficient for the LoginScreen's failure check.
-        throw new Error(responseData.message || 'Login API response indicates failure or missing data.');
+      const response = await api.post(endpoints.auth.login, { userName, password, accountId, type });
+      if (response?.data?.accessToken) {
+        await storage.setItem('SCM-AUTH', JSON.stringify(response.data));
+        const data = response.data?.data || {};
+        const mappedUser: User = {
+          id: data.id,
+          email: data.email || userName,
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          role: (data.type?.toLowerCase?.() || 'student') as any,
+          permissions: data?.role?.permissions || [],
+          profilePic: data.profilePic,
+        };
+        setUser(mappedUser);
+      } else {
+        throw new Error(response?.data?.message || 'Login failed');
       }
-
-      const token = responseData.accessToken;
-      const userData = responseData.data;
-      const roleData = responseData.role;
-
-      // 1. Consolidate data into the final User object structure
-      const finalUser: User = {
-        accessToken: token,
-        userId: userData.id,
-        userName: userData.userName,
-        type: userData.type,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        accountId: userData.accountId,
-        roleName: roleData.name,
-        permissions: roleData.permissions,
-      };
-
-      // 2. Persist data (AsyncStorage equivalent for React Native)
-      // Note: We save the token separately and the user object separately.
-      await AsyncStorage.setItem(API_KEY_STORAGE, token);
-      await AsyncStorage.setItem(USER_STORAGE, JSON.stringify(finalUser));
-
-      // 3. Update state
-      setUser(finalUser);
-
     } catch (error) {
       console.error('Error during AuthContext login processing:', error);
       throw error; // Re-throw so LoginScreen can catch and show Snackbar
@@ -133,10 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const logout = async () => {
     try {
-      // Clear persistence store
-      // Assuming apiService clears the keys
-      await AsyncStorage.removeItem(API_KEY_STORAGE);
-      await AsyncStorage.removeItem(USER_STORAGE);
+      await storage.removeItem('SCM-AUTH');
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);

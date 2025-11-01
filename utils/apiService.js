@@ -36,7 +36,7 @@ const apiClient = axios.create({
   // Note: import.meta.env is a Vite-specific feature. In React Native, 
   // you might use a similar setup via react-native-dotenv or a manual config file.
   // Replace with your RN environment variable setup.
-  baseURL: 'YOUR_REACT_NATIVE_BASE_API_URL', 
+  baseURL: 'https://scm-production-8ceb.up.railway.app', 
   headers: {
     'Content-Type': 'application/json'
   }
