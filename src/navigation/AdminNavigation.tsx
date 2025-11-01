@@ -9,83 +9,47 @@ import { AssignmentsScreen } from '../screens/common/AssignmentsScreen';
 import { AttendanceScreen } from '../screens/common/AttendanceScreen';
 import { AnnouncementsScreen } from '../screens/common/AnnouncementsScreen';
 import { ProfileScreen } from '../screens/common/ProfileScreen';
+import { AddEditStudent } from '../screens/admin/students/AddEditStudent';
+import { AddEditTeacher } from '../screens/admin/teachers/AddEditTeacher';
 
 const Drawer = createDrawerNavigator();
 
-export const AdminNavigation: React.FC = () => {
+export function AdminNavigation() {
   return (
-    <Drawer.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: '#6200ee',
-        },
-        headerTintColor: '#fff',
-        drawerActiveTintColor: '#6200ee',
-      }}
-    >
-      <Drawer.Screen
-        name="Dashboard"
-        component={AdminDashboardScreen}
-        options={{
-          drawerIcon: ({ color }) => '📊',
-        }}
+    <Drawer.Navigator initialRouteName="Dashboard">
+      <Drawer.Screen name="Dashboard" component={AdminDashboardScreen} />
+      <Drawer.Screen name="Students" component={StudentsScreen} />
+      <Drawer.Screen name="Teachers" component={TeachersScreen} />
+      <Drawer.Screen name="Classes" component={ClassesScreen} />
+      <Drawer.Screen name="Fees" component={FeesScreen} />
+      <Drawer.Screen name="Assignments" component={AssignmentsScreen} />
+      <Drawer.Screen name="Attendance" component={AttendanceScreen} />
+      <Drawer.Screen name="Announcements" component={AnnouncementsScreen} />
+      <Drawer.Screen name="Profile" component={ProfileScreen} />
+
+      {/* Student Add/Edit Screens */}
+      <Drawer.Screen 
+        name="AddStudent" 
+        component={AddEditStudent} 
+        options={{ drawerLabel: () => null, title: 'Add Student' }} // Hide from drawer
       />
-      <Drawer.Screen
-        name="Students"
-        component={StudentsScreen}
-        options={{
-          drawerIcon: ({ color }) => '👨‍🎓',
-        }}
+      <Drawer.Screen 
+        name="EditStudent" 
+        component={AddEditStudent} 
+        options={{ drawerLabel: () => null, title: 'Edit Student' }} // Hide from drawer
       />
-      <Drawer.Screen
-        name="Teachers"
-        component={TeachersScreen}
-        options={{
-          drawerIcon: ({ color }) => '👨‍🏫',
-        }}
+
+      {/* Teacher Add/Edit Screens */}
+      <Drawer.Screen 
+        name="AddTeacher" 
+        component={AddEditTeacher} 
+        options={{ drawerLabel: () => null, title: 'Add Teacher' }} // Hide from drawer
       />
-      <Drawer.Screen
-        name="Classes"
-        component={ClassesScreen}
-        options={{
-          drawerIcon: ({ color }) => '🏫',
-        }}
-      />
-      <Drawer.Screen
-        name="Assignments"
-        component={AssignmentsScreen}
-        options={{
-          drawerIcon: ({ color }) => '📚',
-        }}
-      />
-      <Drawer.Screen
-        name="Attendance"
-        component={AttendanceScreen}
-        options={{
-          drawerIcon: ({ color }) => '📅',
-        }}
-      />
-      <Drawer.Screen
-        name="Fees"
-        component={FeesScreen}
-        options={{
-          drawerIcon: ({ color }) => '💰',
-        }}
-      />
-      <Drawer.Screen
-        name="Announcements"
-        component={AnnouncementsScreen}
-        options={{
-          drawerIcon: ({ color }) => '📢',
-        }}
-      />
-      <Drawer.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          drawerIcon: ({ color }) => '👤',
-        }}
+       <Drawer.Screen 
+        name="EditTeacher" 
+        component={AddEditTeacher} 
+        options={{ drawerLabel: () => null, title: 'Edit Teacher' }} // Hide from drawer
       />
     </Drawer.Navigator>
   );
-};
+}

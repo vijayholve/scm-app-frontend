@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Alert,
   RefreshControl,
-  TouchableOpacity,
 } from 'react-native';
 import {
   Card,
@@ -14,7 +13,6 @@ import {
   Portal,
   Dialog,
   Searchbar,
-  FAB,
   ActivityIndicator,
 } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -245,6 +243,14 @@ export const ReusableDataGrid: React.FC<ReusableDataGridProps> = ({
 
   return (
     <View style={styles.container}>
+        <View style={styles.headerContainer}>
+            <Text variant="headlineSmall">{title}</Text>
+            {addActionUrl && (
+                <Button icon="plus" mode="contained" onPress={handleAdd}>
+                    {`Add ${entityName || ''}`}
+                </Button>
+            )}
+        </View>
       <Searchbar
         placeholder={searchPlaceholder}
         onChangeText={setSearchText}
@@ -269,7 +275,6 @@ export const ReusableDataGrid: React.FC<ReusableDataGridProps> = ({
           )}
         />
       )}
-      {addActionUrl && <FAB icon="plus" style={styles.fab} onPress={handleAdd} />}
       <Portal>
         <Dialog visible={isDeleteDialogVisible} onDismiss={hideDeleteDialog}>
           <Dialog.Title>Confirm Delete</Dialog.Title>
@@ -286,6 +291,14 @@ export const ReusableDataGrid: React.FC<ReusableDataGridProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
   searchbar: { margin: 8 },
   listContainer: { paddingHorizontal: 8, paddingBottom: 60 },
   card: { marginVertical: 4 },
@@ -293,7 +306,6 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, fontWeight: 'bold' },
   valueText: { flex: 2, textAlign: 'right' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12, gap: 8 },
-  fab: { position: 'absolute', margin: 16, right: 0, bottom: 0 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
   pagination: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', padding: 16 },
 });
