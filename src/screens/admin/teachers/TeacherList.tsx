@@ -4,27 +4,19 @@ import { ReusableDataGrid } from '../../../components/common/ReusableDataGrid';
 import { storage } from '../../../utils/storage';
 
 const columnsConfig = [
-  { key: 'rollNo', header: 'Roll No' },
-  { key: 'userName', header: 'User Name' },
   { key: 'firstName', header: 'First Name' },
   { key: 'lastName', header: 'Last Name' },
   { key: 'email', header: 'Email' },
   { key: 'mobile', header: 'Mobile' },
-  { key: 'schoolName', header: 'School' },
-  { key: 'className', header: 'Class' },
-  { key: 'divisionName', header: 'Division' },
+  { key: 'subject', header: 'Subject' },
 ];
 
-const transformStudentData = (student: any) => ({
-  ...student,
-  rollno: student.rollNo || student.id,
-  name: `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.userName,
-  schoolName: student.school?.name || 'N/A',
-  className: student.class?.name || 'N/A',
-  divisionName: student.division?.name || 'N/A',
+const transformTeacherData = (teacher: any) => ({
+  ...teacher,
+  name: `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim(),
 });
 
-export const StudentList: React.FC = () => {
+export const TeacherList: React.FC = () => {
   const [fetchUrl, setFetchUrl] = useState('');
 
   useEffect(() => {
@@ -32,7 +24,7 @@ export const StudentList: React.FC = () => {
       const raw = await storage.getItem("SCM-AUTH");
       const accountId = raw ? JSON.parse(raw)?.data?.accountId : undefined;
       if (accountId) {
-        setFetchUrl(`/api/users/getAllBy/${accountId}?type=STUDENT`);
+        setFetchUrl(`/api/users/getAllBy/${accountId}?type=TEACHER`);
       }
     };
     initialize();
@@ -45,16 +37,16 @@ export const StudentList: React.FC = () => {
   return (
     <View style={styles.container}>
       <ReusableDataGrid
-        title="Students"
+        title="Teachers"
         fetchUrl={fetchUrl}
         columns={columnsConfig}
         isPostRequest={true}
-        addActionUrl="AddStudent"
-        editUrl="EditStudent"
+        addActionUrl="AddTeacher"
+        editUrl="EditTeacher"
         deleteUrl="/api/users/delete"
-        entityName="Student"
-        searchPlaceholder="Search students..."
-        transformData={transformStudentData}
+        entityName="Teacher"
+        searchPlaceholder="Search teachers..."
+        transformData={transformTeacherData}
       />
     </View>
   );
@@ -66,4 +58,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StudentList;
+export default TeacherList;

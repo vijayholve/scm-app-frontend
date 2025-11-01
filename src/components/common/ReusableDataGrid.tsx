@@ -1,327 +1,282 @@
-// app/src/components/common/ReusableDataGrid.tsx
-
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   FlatList,
   StyleSheet,
   Alert,
   RefreshControl,
-} from "react-native";
+  TouchableOpacity,
+} from 'react-native';
 import {
   Card,
   Text,
   Button,
-  ActivityIndicator,
-  IconButton,
   Portal,
   Dialog,
-} from "react-native-paper";
-import { useNavigation } from "@react-navigation/native";
-// Assuming 'api' is the axios client instance exported from your utility file
-import { api } from "../../utils/apiService";
-import { LoadingSpinner } from "./LoadingSpinner";
-
-// --- TYPES ---
+  Searchbar,
+  FAB,
+  ActivityIndicator,
+} from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import api from '../../api';
+import { storage } from '../../utils/storage';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface Column {
-  key: string; // Key in the data object (must match API field name)
-  header: string; // Displayed label for the column
-  renderCell?: (item: any) => React.ReactNode; // Custom renderer for cell content
-  isAction?: boolean; // If true, this column contains action buttons (Edit/Delete)
+  key: string;
+  header: string;
+  renderCell?: (item: any) => React.ReactNode;
 }
 
-interface DataGridProps {
+interface ReusableDataGridProps {
   title: string;
+  fetchUrl?: string;
   columns: Column[];
-  fetchUrl: string; // API endpoint for fetching data (e.g., '/api/students')
-  deleteUrl?: string; // API endpoint prefix for deleting (e.g., '/api/students/')
-  addRoute?: string; // Name of the React Navigation route for the Add/Create screen
-  editRoute?: string; // Name of the React Navigation route for the Edit screen
-  initialFilters?: Record<string, any>; // Optional filters to send with fetch API
-  pageSize?: number;
+  addActionUrl?: string;
+  editUrl?: string;
+  deleteUrl?: string;
+  entityName?: string;
+  searchPlaceholder?: string;
+  transformData?: (data: any) => any;
+  isPostRequest?: boolean;
+  requestMethod?: 'GET' | 'POST';
+  filters?: object;
+  clientSideData?: any[];
+  onDataChange?: (data: any[]) => void;
+  defaultPageSize?: number;
+  sortBy?: string;
 }
 
-// --- CONSTANTS ---
-const PAGE_SIZE = 10;
-
-const ReusableDataGrid: React.FC<DataGridProps> = ({
+export const ReusableDataGrid: React.FC<ReusableDataGridProps> = ({
   title,
-  columns,
   fetchUrl,
+  columns,
+  addActionUrl,
+  editUrl,
   deleteUrl,
-  addRoute,
-  editRoute,
-  initialFilters = {},
-  pageSize = PAGE_SIZE,
+  entityName,
+  searchPlaceholder = 'Search...',
+  transformData,
+  isPostRequest = true,
+  requestMethod,
+  filters = {},
+  clientSideData = [],
+  onDataChange,
+  defaultPageSize = 10,
+  sortBy = 'asc',
 }) => {
   const navigation = useNavigation();
-  const [data, setData] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [error, setError] = useState<string | null>(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: defaultPageSize });
+  const [rowCount, setRowCount] = useState(0);
+  const [searchText, setSearchText] = useState('');
+  const [gridFilters, setGridFilters] = useState(filters);
+  const [gridData, setGridData] = useState([]);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+  const [isDeleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
-  // Function to fetch data from the API
-  const fetchData = useCallback(
-    async (pageToFetch: number, isRefreshing = false) => {
-      // Prevent fetching if already at the last page and not refreshing
-      if (pageToFetch > totalPages && !isRefreshing) return;
+  const latestFilters = useRef(gridFilters);
+  const isInitialLoadRef = useRef(true);
 
-      if (isRefreshing || pageToFetch === 1) {
-        setLoading(true);
-        setError(null);
-      } else {
-        setRefreshing(true); // Use refreshing state for subsequent page loads via scroll
-      }
-
-      try {
-        const params = {
-          page: pageToFetch,
-          limit: pageSize,
-          ...initialFilters,
-          // TODO: Add search/sort parameters to 'params' here if implementing search
-        };
-
-        const response = await api.get(fetchUrl, { params });
-
-        // Assuming API response format: { data: [], totalPages: 1, currentPage: 1 }
-        const newItems = response.data?.data || [];
-        const totalPagesFromApi = response.data?.totalPages || 1;
-
-        setData((prevData) => {
-          if (isRefreshing || pageToFetch === 1) {
-            return newItems; // Replace data on initial load or refresh
-          } else {
-            return [...prevData, ...newItems]; // Append data for load more
-          }
-        });
-        setTotalPages(totalPagesFromApi);
-        setPage(pageToFetch);
-      } catch (err: any) {
-        console.error("Data Fetch Error:", err.response?.data || err.message);
-        const errorMessage =
-          err.response?.data?.message || "Failed to fetch data.";
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [fetchUrl, pageSize, initialFilters, totalPages]
-  );
-
-  // Initial load effect
   useEffect(() => {
-    fetchData(1, true);
-  }, [fetchUrl]); // Re-fetch when URL or filters change
+    const fetchUser = async () => {
+      const raw = await storage.getItem("SCM-AUTH");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed?.data?.user || parsed?.data);
+      }
+    };
+    fetchUser();
+  }, []);
 
-  // Load more data when scrolling to the end
-  const handleLoadMore = () => {
-    if (!loading && !refreshing && page < totalPages) {
-      fetchData(page + 1);
-    }
-  };
+  useEffect(() => {
+    latestFilters.current = gridFilters;
+  }, [gridFilters]);
 
-  // Handle Refresh from pull-to-refresh
-  const handleRefresh = () => {
-    fetchData(1, true);
-  };
+  const isStudent = user?.type === 'STUDENT';
+  const isTeacher = user?.type === 'TEACHER';
+  const isAdmin = user?.type === 'ADMIN';
+  const teacherSchoolId = user?.schoolId ?? null;
 
-  // --- CRUD HANDLERS ---
-  const handleEdit = (item: any) => {
-    if (editRoute) {
-      // Pass the item data to the edit screen
-      navigation.navigate(
-        editRoute as never,
-        { id: item._id, data: item } as never
-      );
-    } else {
-      Alert.alert(
-        "Configuration Error",
-        "Edit route not configured for this data grid."
-      );
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!itemToDelete || !deleteUrl) {
-      setShowDeleteDialog(false);
+  const fetchData = useCallback(async () => {
+    if (!fetchUrl) {
+      const filteredData = clientSideData.filter((item) => {
+        let isMatch = true;
+        if (latestFilters.current.schoolId) {
+          isMatch = isMatch && item.schoolId == latestFilters.current.schoolId;
+        }
+        if (latestFilters.current.classId) {
+          isMatch = isMatch && item.classId == latestFilters.current.classId;
+        }
+        if (latestFilters.current.divisionId) {
+          isMatch = isMatch && item.divisionId == latestFilters.current.divisionId;
+        }
+        if (searchText) {
+          isMatch = isMatch && JSON.stringify(item).toLowerCase().includes(searchText.toLowerCase());
+        }
+        return isMatch;
+      });
+      const transformed = transformData ? filteredData.map(transformData) : filteredData;
+      setGridData(transformed);
+      setRowCount(transformed.length);
+      if (onDataChange) onDataChange(transformed);
       return;
     }
 
     setLoading(true);
-    setShowDeleteDialog(false);
-
     try {
-      // Construct the full delete URL (e.g., /api/students/12345)
-      await api.delete(`${deleteUrl}${itemToDelete._id}`);
+      let response;
+      const method = (requestMethod || (isPostRequest ? 'POST' : 'GET')).toUpperCase();
+      const enforcedFilters: any = {};
 
-      // Refresh data after successful deletion
-      Alert.alert("Success", `${title.slice(0, -1)} deleted successfully.`);
-      fetchData(1, true);
+      if (isStudent) {
+        if (user.schoolId) enforcedFilters.schoolId = user.schoolId;
+        if (user.classId) enforcedFilters.classId = user.classId;
+        if (user.divisionId) enforcedFilters.divisionId = user.divisionId;
+      }
+
+      let teacherClassList = [];
+      let teacherDivisionList = [];
+      if (isTeacher && Array.isArray(user?.allocatedClasses)) {
+        teacherClassList = Array.from(new Set(user.allocatedClasses.map((ac: any) => ac.classId).filter(Boolean)));
+        teacherDivisionList = Array.from(new Set(user.allocatedClasses.map((ac: any) => ac.divisionId).filter(Boolean)));
+        if (teacherSchoolId != null) enforcedFilters.schoolId = teacherSchoolId;
+      }
+
+      const uiFilters: any = {};
+      if (!(isAdmin && isInitialLoadRef.current)) {
+        Object.assign(uiFilters, latestFilters.current);
+      }
+
+      const basePayload = {
+        page: paginationModel.page,
+        size: paginationModel.pageSize,
+        sortBy: 'id',
+        sortDir: sortBy,
+        search: searchText
+      };
+
+      const payload = { ...basePayload, ...uiFilters, ...enforcedFilters };
+
+      if (uiFilters.classId || uiFilters.divisionId) {
+        delete payload.classList;
+        delete payload.divisionList;
+      } else if (isTeacher) {
+        if (teacherClassList.length) payload.classList = teacherClassList;
+        if (teacherDivisionList.length) payload.divisionList = teacherDivisionList;
+      }
+
+      if (method === 'POST') {
+        response = await api.post(fetchUrl, payload);
+      } else {
+        response = await api.get(fetchUrl, { params: payload });
+      }
+
+      const responseData = response.data?.content || response.data?.data || response.data || [];
+      const transformed = transformData ? responseData.map(transformData) : responseData;
+      setGridData(transformed);
+      setRowCount(response.data?.totalElements || responseData.length || 0);
+      if (onDataChange) onDataChange(transformed);
+
     } catch (err: any) {
-      console.error("Delete Error:", err.response?.data || err.message);
-      const errorMessage =
-        err.response?.data?.message ||
-        `Failed to delete ${title.slice(0, -1)}.`;
-      Alert.alert("Error", errorMessage);
-      setLoading(false);
+      console.error(`Failed to fetch data from ${fetchUrl}:`, err);
+      Alert.alert('Fetch Error', err.message || 'An unexpected error occurred.');
+      setGridData([]);
+      setRowCount(0);
     } finally {
-      setItemToDelete(null);
+      setLoading(false);
+      if (isInitialLoadRef.current) isInitialLoadRef.current = false;
+    }
+  }, [
+    fetchUrl, isPostRequest, requestMethod, searchText, transformData,
+    clientSideData, paginationModel, isAdmin, isStudent, isTeacher, sortBy,
+    teacherSchoolId, user, onDataChange
+  ]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchData().finally(() => setRefreshing(false));
+  };
+
+  const handleAdd = () => addActionUrl && navigation.navigate(addActionUrl as never);
+  const handleEdit = (item: any) => editUrl && navigation.navigate(`${editUrl}/${item.id}` as never);
+  const showDeleteDialog = (id: string) => {
+    setDeleteItemId(id);
+    setDeleteDialogVisible(true);
+  };
+  const hideDeleteDialog = () => setDeleteDialogVisible(false);
+
+  const handleDelete = async () => {
+    if (deleteUrl && deleteItemId) {
+      try {
+        await api.post(deleteUrl, { id: deleteItemId });
+        Alert.alert('Success', `${entityName} deleted successfully.`);
+        fetchData();
+      } catch (error: any) {
+        Alert.alert('Delete Error', error.message || 'Failed to delete item.');
+      } finally {
+        hideDeleteDialog();
+      }
     }
   };
 
-  const handleOpenDeleteDialog = (item: any) => {
-    setItemToDelete(item);
-    setShowDeleteDialog(true);
-  };
-
-  // --- RENDERERS ---
-
-  // Custom component for each row/card
   const renderItem = ({ item }: { item: any }) => (
-    // Card onPress can also trigger edit/view if an editRoute is provided
-    <Card style={styles.card} onPress={() => editRoute && handleEdit(item)}>
-      <Card.Content>
-        {columns.map((column, index) => (
-          // Use two-column layout for mobile: Header/Label on left, Value/Actions on right
-          <View key={column.key} style={styles.row}>
-            <Text style={styles.headerText}>{column.header}:</Text>
-
-            <View style={styles.valueContainer}>
-              {column.isAction ? (
-                // Render Action Buttons
-                <View style={styles.actionsContainer}>
-                  {/* Default Edit Action */}
-                  {editRoute && (
-                    <IconButton
-                      icon="pencil"
-                      size={20}
-                      onPress={() => handleEdit(item)}
-                    />
-                  )}
-                  {/* Default Delete Action */}
-                  {deleteUrl && (
-                    <IconButton
-                      icon="delete"
-                      size={20}
-                      onPress={() => handleOpenDeleteDialog(item)}
-                    />
-                  )}
-                  {/* Custom renderCell for the action column can add more buttons */}
-                  {column.renderCell && column.renderCell(item)}
+    <Card style={styles.card}>
+        <Card.Content>
+            {columns.map((col) => (
+                <View key={col.key} style={styles.row}>
+                    <Text variant="labelLarge" style={styles.headerText}>{col.header}</Text>
+                    {col.renderCell ? col.renderCell(item) : <Text style={styles.valueText}>{item[col.key]}</Text>}
                 </View>
-              ) : // Render Data Cell
-              column.renderCell ? (
-                column.renderCell(item) // Use custom renderer if provided
-              ) : (
-                <Text>
-                  {item[column.key] ? String(item[column.key]) : "N/A"}
-                </Text>
-              )}
+            ))}
+            <View style={styles.actions}>
+                {editUrl && <Button mode="outlined" onPress={() => handleEdit(item)}>Edit</Button>}
+                {deleteUrl && <Button mode="text" textColor="red" onPress={() => showDeleteDialog(item.id)}>Delete</Button>}
             </View>
-          </View>
-        ))}
-      </Card.Content>
+        </Card.Content>
     </Card>
   );
 
-  // Render Footer for FlatList (loading indicator/error/end of list)
-  const renderFooter = () => {
-    if (loading && data.length === 0) return null; // Handled by main loading spinner
-
-    // Only show scroll loading indicator if fetching next page
-    if (refreshing)
-      return <ActivityIndicator style={styles.loader} size="small" />;
-
-    if (error && data.length > 0) {
-      // Show inline error below existing data
-      return <Text style={styles.errorText}>Data loading error: {error}</Text>;
-    }
-
-    if (page >= totalPages && data.length > 0) {
-      return (
-        <Text style={styles.endOfListText}>--- End of {title} List ---</Text>
-      );
-    }
-
-    return null;
-  };
-
-  // --- MAIN RENDER LOGIC ---
-
-  if (loading && data.length === 0) {
-    return <LoadingSpinner />;
-  }
-
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        {addRoute && (
-          <Button
-            mode="contained"
-            icon="plus"
-            onPress={() => navigation.navigate(addRoute as never)}
-            style={styles.addButton}
-          >
-            Add
-          </Button>
-        )}
-      </View>
-
-      {data.length === 0 && !loading && !error ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No {title} found.</Text>
-          <Button mode="outlined" onPress={handleRefresh}>
-            Reload
-          </Button>
-        </View>
-      ) : (
+      <Searchbar
+        placeholder={searchPlaceholder}
+        onChangeText={setSearchText}
+        value={searchText}
+        style={styles.searchbar}
+        onIconPress={fetchData}
+      />
+      {loading && !refreshing ? <LoadingSpinner /> : (
         <FlatList
-          data={data}
-          keyExtractor={(item) =>
-            item._id || item.id || Math.random().toString()
-          } // Ensure unique key
+          data={gridData}
           renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={renderFooter}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing && page === 1}
-              onRefresh={handleRefresh}
-            />
-          }
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={<View style={styles.emptyContainer}><Text>No {entityName} found.</Text></View>}
+          ListFooterComponent={() => (
+            <View style={styles.pagination}>
+              <Button disabled={paginationModel.page === 0} onPress={() => setPaginationModel(p => ({...p, page: p.page - 1}))}>Previous</Button>
+              <Text>Page {paginationModel.page + 1}</Text>
+              <Button disabled={(paginationModel.page + 1) * paginationModel.pageSize >= rowCount} onPress={() => setPaginationModel(p => ({...p, page: p.page + 1}))}>Next</Button>
+            </View>
+          )}
         />
       )}
-
-      {/* Delete Confirmation Dialog */}
+      {addActionUrl && <FAB icon="plus" style={styles.fab} onPress={handleAdd} />}
       <Portal>
-        <Dialog
-          visible={showDeleteDialog}
-          onDismiss={() => setShowDeleteDialog(false)}
-        >
-          <Dialog.Title>Confirm Deletion</Dialog.Title>
-          <Dialog.Content>
-            <Text>Are you sure you want to delete this record?</Text>
-            {loading && <ActivityIndicator style={{ marginTop: 10 }} />}
-          </Dialog.Content>
+        <Dialog visible={isDeleteDialogVisible} onDismiss={hideDeleteDialog}>
+          <Dialog.Title>Confirm Delete</Dialog.Title>
+          <Dialog.Content><Text>Are you sure you want to delete this {entityName}?</Text></Dialog.Content>
           <Dialog.Actions>
-            <Button
-              onPress={() => setShowDeleteDialog(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button onPress={handleDelete} loading={loading}>
-              Delete
-            </Button>
+            <Button onPress={hideDeleteDialog}>Cancel</Button>
+            <Button onPress={handleDelete} textColor="red">Delete</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -329,82 +284,16 @@ const ReusableDataGrid: React.FC<DataGridProps> = ({
   );
 };
 
-// --- STYLES ---
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 10,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-  },
-  addButton: {
-    //
-  },
-  listContent: {
-    padding: 10,
-  },
-  card: {
-    marginBottom: 10,
-    elevation: 2, // Shadow for Android
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  headerText: {
-    fontWeight: "bold",
-    color: "#333",
-    width: "40%", // Label space
-    fontSize: 14,
-  },
-  valueContainer: {
-    width: "60%", // Value space
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
-  actionsContainer: {
-    flexDirection: "row",
-  },
-  loader: {
-    marginVertical: 20,
-  },
-  errorText: {
-    color: "red",
-    textAlign: "center",
-    marginVertical: 20,
-    paddingHorizontal: 20,
-  },
-  endOfListText: {
-    textAlign: "center",
-    color: "#999",
-    marginVertical: 20,
-    fontStyle: "italic",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  emptyText: {
-    fontSize: 18,
-    marginBottom: 10,
-    color: "#666",
-  },
+  container: { flex: 1 },
+  searchbar: { margin: 8 },
+  listContainer: { paddingHorizontal: 8, paddingBottom: 60 },
+  card: { marginVertical: 4 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, alignItems: 'center' },
+  headerText: { flex: 1, fontWeight: 'bold' },
+  valueText: { flex: 2, textAlign: 'right' },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12, gap: 8 },
+  fab: { position: 'absolute', margin: 16, right: 0, bottom: 0 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
+  pagination: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', padding: 16 },
 });
-
-export default ReusableDataGrid;
