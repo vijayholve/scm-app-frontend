@@ -2,6 +2,26 @@ import api, { endpoints } from './index';
 import { Student, Teacher, Assignment, Class } from '../types';
 
 class ApiService {
+  async getStudentsPaged(params: {
+    accountId: string;
+    page?: number;
+    size?: number;
+    search?: string;
+    schoolId?: string;
+    classId?: string;
+    divisionId?: string;
+    sortBy?: string;
+    sortDir?: 'asc' | 'desc';
+  }): Promise<{ items: Student[]; total: number }> {
+    const { accountId, page = 0, size = 10, search = '', schoolId, classId, divisionId, sortBy = 'id', sortDir = 'asc' } = params;
+    const url = `${endpoints.users.getAllByType}/${accountId}?type=STUDENT`;
+    const payload = { page, size, sortBy, sortDir, search, schoolId, classId, divisionId };
+    const res = await api.post(url, payload);
+    const items = res.data?.content || res.data?.data || res.data || [];
+    const total = res.data?.totalElements ?? items.length ?? 0;
+    return { items, total };
+  }
+
   async getStudents(accountId?: string): Promise<Student[]> {
     const res = await api.get(endpoints.users.getAllByType, { params: { type: 'STUDENT', accountId } });
     return res.data?.data || res.data || [];
@@ -67,6 +87,45 @@ class ApiService {
   async getTimetableBy(accountId?: string, classId?: string): Promise<any> {
     const res = await api.get(endpoints.timetable.base, { params: { accountId, classId } });
     return res.data?.data || res.data;
+  }
+
+  async getRoles(accountId: string): Promise<any[]> {
+    const url = `${endpoints.roles.getAll}/${accountId}`;
+    const res = await api.post(url, { page: 0, size: 1000, sortBy: 'id', sortDir: 'asc', search: '' });
+    return res.data?.content || [];
+  }
+
+  async getSchools(accountId: string): Promise<any[]> {
+    const url = `${endpoints.schools.branches.getAll}/${accountId}`;
+    const res = await api.post(url, { page: 0, size: 1000, sortBy: 'id', sortDir: 'asc', search: '' });
+    return res.data?.content || [];
+  }
+
+  async getClassesList(accountId: string): Promise<any[]> {
+    const url = `${endpoints.schools.classes.getAll}/${accountId}`;
+    const res = await api.post(url, { page: 0, size: 1000, sortBy: 'id', sortDir: 'asc', search: '' });
+    return res.data?.content || [];
+  }
+
+  async getDivisions(accountId: string): Promise<any[]> {
+    const url = `${endpoints.schools.divisions.getAll}/${accountId}`;
+    const res = await api.post(url, { page: 0, size: 1000, sortBy: 'id', sortDir: 'asc', search: '' });
+    return res.data?.content || [];
+  }
+
+  async getStudentById(id: string): Promise<any> {
+    const res = await api.get(`api/users/getById`, { params: { id } });
+    return res.data;
+  }
+
+  async saveStudent(payload: any): Promise<any> {
+    const res = await api.post(`api/users/save`, payload);
+    return res.data;
+  }
+
+  async updateStudentFull(payload: any): Promise<any> {
+    const res = await api.put(`api/users/update`, payload);
+    return res.data;
   }
 }
 
