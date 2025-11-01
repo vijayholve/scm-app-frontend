@@ -5,6 +5,8 @@ import { AssignmentsScreen } from '../screens/common/AssignmentsScreen';
 import { AttendanceScreen } from '../screens/common/AttendanceScreen';
 import { AnnouncementsScreen } from '../screens/common/AnnouncementsScreen';
 import { ProfileScreen } from '../screens/common/ProfileScreen';
+// ADDED Text IMPORT
+import { Text } from 'react-native-paper'; 
 
 const Tab = createBottomTabNavigator();
 
@@ -23,35 +25,40 @@ export const TeacherNavigation: React.FC = () => {
         name="Dashboard"
         component={TeacherDashboardScreen}
         options={{
-          tabBarIcon: ({ color }) => <span>📊</span>,
+          // REPLACED <span> WITH <Text>
+          tabBarIcon: ({ color }) => <Text>📊</Text>,
         }}
       />
       <Tab.Screen
         name="Attendance"
         component={AttendanceScreen}
         options={{
-          tabBarIcon: ({ color }) => <span>📅</span>,
+          // REPLACED <span> WITH <Text>
+          tabBarIcon: ({ color }) => <Text>📅</Text>,
         }}
       />
       <Tab.Screen
         name="Assignments"
         component={AssignmentsScreen}
         options={{
-          tabBarIcon: ({ color }) => <span>📚</span>,
+          // REPLACED <span> WITH <Text>
+          tabBarIcon: ({ color }) => <Text>📚</Text>,
         }}
       />
       <Tab.Screen
         name="Announcements"
         component={AnnouncementsScreen}
         options={{
-          tabBarIcon: ({ color }) => <span>📢</span>,
+          // REPLACED <span> WITH <Text>
+          tabBarIcon: ({ color }) => <Text>📢</Text>,
         }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarIcon: ({ color }) => <span>👤</span>,
+          // REPLACED <span> WITH <Text>
+          tabBarIcon: ({ color }) => <Text>👤</Text>,
         }}
       />
     </Tab.Navigator>
