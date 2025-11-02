@@ -1,0 +1,16 @@
+import React from 'react';
+import { PaperProvider } from 'react-native-paper';
+import { AuthProvider } from './src/context/AuthContext';
+import { RootNavigation } from './src/navigation/RootNavigation';
+// import './i18n';
+// import Scdprovi. 
+import 
+export default function App() {
+  return (
+    <PaperProvider>
+      <AuthProvider>
+        <RootNavigation />
+      </AuthProvider>
+    </PaperProvider>
+  );
+}
