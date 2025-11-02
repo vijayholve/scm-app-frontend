@@ -83,7 +83,7 @@ export const ReusableDataGrid: React.FC<ReusableDataGridProps> = ({
   const [langModalVisible, setLangModalVisible] = useState(false);
   const languages = [
     { code: 'en', label: 'English' },
-    { code: 'mr', label: 'मराठी' }, 
+    { code: 'mr', label: 'मराठी' },
     { code: 'hi', label: 'हिन्दी' },
     { code: 'sp', label: 'Español' },
     { code: 'fr', label: 'Français' },

@@ -8,7 +8,7 @@ import { RootNavigation } from "./src/navigation/RootNavigation";
 import { SCDProvider } from "./src/context/SCDProvider";
 import { Provider as ReduxProvider } from "react-redux";
 import store from "./src/store/store";
-import './i18n'
+import './'
 export default function App() {
   return (
     <PaperProvider>

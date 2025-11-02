@@ -17,7 +17,6 @@ import {
   IconButton,
 } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import i18n from '../../i18n';
 import { useNavigation } from '@react-navigation/native';
 import api from '../../api';
 import { storage } from '../../utils/storage';
@@ -83,7 +82,7 @@ export const ReusableDataGrid: React.FC<ReusableDataGridProps> = ({
   const [langModalVisible, setLangModalVisible] = useState(false);
   const languages = [
     { code: 'en', label: 'English' },
-    { code: 'mr', label: 'मराठी' }, 
+    { code: 'mr', label: 'मराठी' },
     { code: 'hi', label: 'हिन्दी' },
     { code: 'sp', label: 'Español' },
     { code: 'fr', label: 'Français' },
@@ -281,25 +280,48 @@ export const ReusableDataGrid: React.FC<ReusableDataGridProps> = ({
           keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
           contentContainerStyle={styles.listContainer}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<View style={styles.emptyContainer}><Text>No {entityName} found.</Text></View>}
+          ListEmptyComponent={<View style={styles.emptyContainer}><Text>{t('columnHeader.select') ? `${t('columnHeader.select')} ${entityName}` : `No ${entityName} found.`}</Text></View>}
           ListFooterComponent={() => (
             <View style={styles.pagination}>
-              <Button disabled={paginationModel.page === 0} onPress={() => setPaginationModel(p => ({...p, page: p.page - 1}))}>Previous</Button>
-              <Text>Page {paginationModel.page + 1}</Text>
-              <Button disabled={(paginationModel.page + 1) * paginationModel.pageSize >= rowCount} onPress={() => setPaginationModel(p => ({...p, page: p.page + 1}))}>Next</Button>
-            </View>
+                <Button disabled={paginationModel.page === 0} onPress={() => setPaginationModel(p => ({...p, page: p.page - 1}))}>{t('action.viewMore') || 'Previous'}</Button>
+                <Text>{t('action.viewAll') ? `${t('action.viewAll')}: ${paginationModel.page + 1}` : `Page ${paginationModel.page + 1}`}</Text>
+                <Button disabled={(paginationModel.page + 1) * paginationModel.pageSize >= rowCount} onPress={() => setPaginationModel(p => ({...p, page: p.page + 1}))}>{t('action.viewMore') || 'Next'}</Button>
+              </View>
           )}
         />
       )}
       <Portal>
-        <Dialog visible={isDeleteDialogVisible} onDismiss={hideDeleteDialog}>
-          <Dialog.Title>Confirm Delete</Dialog.Title>
-          <Dialog.Content><Text>Are you sure you want to delete this {entityName}?</Text></Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={hideDeleteDialog}>Cancel</Button>
-            <Button onPress={handleDelete} textColor="red">Delete</Button>
-          </Dialog.Actions>
-        </Dialog>
+          <Dialog visible={isDeleteDialogVisible} onDismiss={hideDeleteDialog}>
+            <Dialog.Title>{t('confirm.deleteItem') || 'Confirm Delete'}</Dialog.Title>
+            <Dialog.Content><Text>{t('confirm.deleteItem') || `Are you sure you want to delete this ${entityName}?`}</Text></Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={hideDeleteDialog}>{t('action.viewMore') || 'Cancel'}</Button>
+              <Button onPress={handleDelete} textColor="red">{t('tooltip.delete') || 'Delete'}</Button>
+            </Dialog.Actions>
+          </Dialog>
+
+          {/* Language selection dialog */}
+          <Dialog visible={langModalVisible} onDismiss={() => setLangModalVisible(false)}>
+            <Dialog.Title>Change language</Dialog.Title>
+            <Dialog.Content>
+              {languages.map((lang) => (
+                <Button
+                  key={lang.code}
+                  mode={i18n.language === lang.code ? 'contained' : 'text'}
+                  onPress={() => {
+                    i18n.changeLanguage(lang.code);
+                    setLangModalVisible(false);
+                  }}
+                  style={{ marginBottom: 8 }}
+                >
+                  {lang.label}
+                </Button>
+              ))}
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setLangModalVisible(false)}>Close</Button>
+            </Dialog.Actions>
+          </Dialog>
       </Portal>
     </View>
   );
