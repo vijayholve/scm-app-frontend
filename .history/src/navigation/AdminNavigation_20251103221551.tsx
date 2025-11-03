@@ -5,19 +5,12 @@ import { StudentsScreen } from "../screens/admin/StudentsScreen";
 import { TeachersScreen } from "../screens/admin/TeachersScreen";
 import { ClassesScreen } from "../screens/admin/ClassesScreen";
 import { FeesScreen } from "../screens/admin/FeesScreen";
-import { AssignmentsScreen } from "../screens/admin/AssignmentsScreen";
-import { AttendancesScreen } from "../screens/admin/AttendancesScreen";
+import { AssignmentsScreen } from "../screens/admin/AssignmentsScreen
+import { AttendanceScreen } from "../screens/common/AttendanceScreen";
 import { AnnouncementsScreen } from "../screens/common/AnnouncementsScreen";
 import { ProfileScreen } from "../screens/common/ProfileScreen";
-
-
 import { AddEditStudent } from "../screens/admin/students/AddEditStudent";
 import { AddEditTeacher } from "../screens/admin/teachers/AddEditTeacher";
-
-import { EditAssignment } from "../screens/admin/assignments/EditAssignment";
-
-
-// import {}
 import { IconButton, Dialog, Portal, Button } from "react-native-paper";
 import i18n from "../../i18n";
 import { Text, View } from "react-native";
@@ -80,7 +73,7 @@ export function AdminNavigation() {
       />
       <Drawer.Screen name="Fees" component={FeesScreen} />
       <Drawer.Screen name="Assignments" component={AssignmentsScreen} />
-      <Drawer.Screen name="Attendance" component={AttendancesScreen} />
+      <Drawer.Screen name="Attendance" component={AttendanceScreen} />
       <Drawer.Screen name="Announcements" component={AnnouncementsScreen} />
       <Drawer.Screen name="Profile" component={ProfileScreen} />
 
@@ -106,13 +99,6 @@ export function AdminNavigation() {
         name="EditTeacher"
         component={AddEditTeacher}
         options={{ drawerLabel: () => null, title: "Edit Teacher" }} // Hide from drawer
-      />
-
-      {/* Assignment Edit Screen */}
-      <Drawer.Screen
-        name="EditAssignment"
-        component={EditAssignment}
-        options={{ drawerLabel: () => null, title: "Edit Assignment" }} // Hide from drawer
       />
     </Drawer.Navigator>
   );

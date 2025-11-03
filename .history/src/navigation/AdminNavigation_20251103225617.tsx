@@ -14,9 +14,6 @@ import { ProfileScreen } from "../screens/common/ProfileScreen";
 import { AddEditStudent } from "../screens/admin/students/AddEditStudent";
 import { AddEditTeacher } from "../screens/admin/teachers/AddEditTeacher";
 
-import { EditAssignment } from "../screens/admin/assignments/EditAssignment";
-
-
 // import {}
 import { IconButton, Dialog, Portal, Button } from "react-native-paper";
 import i18n from "../../i18n";
@@ -106,13 +103,6 @@ export function AdminNavigation() {
         name="EditTeacher"
         component={AddEditTeacher}
         options={{ drawerLabel: () => null, title: "Edit Teacher" }} // Hide from drawer
-      />
-
-      {/* Assignment Edit Screen */}
-      <Drawer.Screen
-        name="EditAssignment"
-        component={EditAssignment}
-        options={{ drawerLabel: () => null, title: "Edit Assignment" }} // Hide from drawer
       />
     </Drawer.Navigator>
   );

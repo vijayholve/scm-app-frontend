@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StudentDashboardScreen } from '../screens/student/StudentDashboardScreen';
 import { TimetableScreen } from '../screens/student/TimetableScreen';
-import { AssignmentsScreen } from '../screens/admin/AssignmentsScreen';
+import { AssignmentsScreen } from '../screens/common/AssignmentsScreen';
 import { AttendancesScreen } from '../screens/admin/AttendancesScreen';
 import { FeesScreen } from '../screens/student/FeesScreen';
 import { AnnouncementsScreen } from '../screens/common/AnnouncementsScreen';
