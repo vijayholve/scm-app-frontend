@@ -400,12 +400,11 @@ export const EditAssignment: React.FC = () => {
                   values: form,
                   setFieldValue: (field: string, value: any) => setForm((f) => ({ ...f, [field]: value })),
                   touched: {},
-                  errors: {},
-                }}
-              />
+                  errors: {},dddddddddddddddddddd
+                }}dsd
               
               {/* Subject Select */}
-              <List.Section style={styles.selectorSection} title="Subject *">
+              <List.Section style={styles.selectorSection} title="Sudddbject *">
                   <List.Accordion 
                       title={subjects.find((s) => String(s.id) === String(form.subjectId))?.name || 'Select Subject'} 
                       left={props => <List.Icon {...props} icon="book-open-outline" />}

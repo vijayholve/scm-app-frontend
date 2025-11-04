@@ -147,11 +147,11 @@ class ApiService {
   async getAssignmentSubmissions(assignmentId: string): Promise<any[]> {
     const res = await api.get(`api/assignments/submissions`, { params: { assignmentId } });
     return res.data?.data || res.data || [];
-  }
+  },
   async getAssignmentById(id: string): Promise<any> {
     const res = await api.get(`${endpoints.assignments.base}/${id}`);
     return res.data;
-  }
+    
 }
 
 export const apiService = new ApiService();

@@ -9,8 +9,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 
 // --- Corrected Import: Accessing SCDSelector from the expected repository path ---
-// SCDSelector.native exports a default component, import it as default.
-import SCDSelector from '../../../components/common/SCDSelector.native';
+import { SCDSelector } from '../../../components/common/SCDSelector.native'; 
 
 // Date Picker (using native module pattern)
 // Ensure you have installed: npm install @react-native-community/datetimepicker
@@ -396,12 +395,11 @@ export const EditAssignment: React.FC = () => {
               
               {/* SCD Selector Component (Accessed from local repo) */}
               <SCDSelector
-                formik={{
-                  values: form,
-                  setFieldValue: (field: string, value: any) => setForm((f) => ({ ...f, [field]: value })),
-                  touched: {},
-                  errors: {},
-                }}
+                  schools={schools}
+                  classes={classes}
+                  divisions={divisions}
+                  form={form}
+                  setForm={setForm}
               />
               
               {/* Subject Select */}

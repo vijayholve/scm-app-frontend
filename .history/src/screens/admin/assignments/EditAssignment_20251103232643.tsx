@@ -405,7 +405,7 @@ export const EditAssignment: React.FC = () => {
               />
               
               {/* Subject Select */}
-              <List.Section style={styles.selectorSection} title="Subject *">
+              <List.Section style={styles.selectorSection} title="Sudddbject *">
                   <List.Accordion 
                       title={subjects.find((s) => String(s.id) === String(form.subjectId))?.name || 'Select Subject'} 
                       left={props => <List.Icon {...props} icon="book-open-outline" />}

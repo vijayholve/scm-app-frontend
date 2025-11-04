@@ -139,19 +139,7 @@ class ApiService {
     const res = await api.put(`api/users/update`, payload);
     return res.data;
   }
-  async getSubjects(accountId: string): Promise<any[]> {
-    const url = `${endpoints.subjects.getAll}/${accountId}`;
-    const res = await api.post(url, { page: 0, size: 1000, sortBy: 'id', sortDir: 'asc', search: '' });
-    return res.data?.content || [];
-  }
-  async getAssignmentSubmissions(assignmentId: string): Promise<any[]> {
-    const res = await api.get(`api/assignments/submissions`, { params: { assignmentId } });
-    return res.data?.data || res.data || [];
-  }
-  async getAssignmentById(id: string): Promise<any> {
-    const res = await api.get(`${endpoints.assignments.base}/${id}`);
-    return res.data;
-  }
+  async getSubjec
 }
 
 export const apiService = new ApiService();

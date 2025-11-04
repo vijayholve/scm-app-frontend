@@ -13,13 +13,8 @@ const endpoints = {
     getAllByType: 'api/users/getAllBy',
     delete: 'api/users/delete'
   },
-  subjects: {
-    base: 'api/subjects',
-    getAll: 'api/subjects/getAll',
-    getById: 'api/subjects/getById',
-    create: 'api/subjects/create',
-    update: 'api/subjects/update',
-    delete: 'api/subjects/delete'
+  Subjects: {
+
   },
   roles: {
     base: 'api/roles',
